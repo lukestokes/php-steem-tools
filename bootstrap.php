@@ -11,4 +11,3 @@ $user_name = $argv[1];
 if (isset($argv[2]) && $argv[2] == 'true') {
     $debug = true;
 }
-
