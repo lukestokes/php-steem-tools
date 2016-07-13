@@ -40,7 +40,18 @@ Steem Power Per Week: 74976.543558687
 
 Note: If any other activity is going on within the account during the time you run the test, you won't get accurate results reflecting *just* the changes due to interest rates.
 
-Requirements:
+## Steem Power Balance Over Time
 
-PHP with Curl  
-[Piston](http://piston.readthedocs.io/en/develop/index.html)
+A simple tool for creating a text file of your change in Steem Power with one line added to the file every 5 minutes.
+
+```
+php balance_over_time.php <username>
+```
+It will output a file like so:
+
+![](http://content.screencast.com/users/lukestokes/folders/Jing/media/bb59190e-c2be-47fa-9906-ef19e234fe48/00002266.png)
+
+### Requirements:
+
+* PHP with Curl
+* [Piston](http://piston.readthedocs.io/en/develop/index.html)
