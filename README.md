@@ -51,6 +51,31 @@ It will output a file like so:
 
 ![](http://content.screencast.com/users/lukestokes/folders/Jing/media/bb59190e-c2be-47fa-9906-ef19e234fe48/00002266.png)
 
+## Top Followed Accounts
+
+This script creates some txt files and then analyzes them to get the top 100 followed accounts on Steemit.
+
+```
+php follower_stats.php
+```
+Example output:
+```
+## <center>TOP 100 USERS BY FOLLOWER COUNT </center>
+
+|    |           Account|    Number of Followers   |
+|:--:|:----------------:|:------------------------:|
+|  1  |@dollarvigilante: |   1101   |
+|  2  |     @dantheman: |   733   |
+|  3  |   @stellabelle: |   650   |
+|  4  |           @dan: |   603   |
+|  5  |    @larkenrose: |   514   |
+|  6  |  @cryptoctopus: |   473   |
+|  7  |           @ned: |   468   |
+|  8  |    @donkeypong: |   395   |
+|  9  |  @heiditravels: |   392   |
+|  10  |         @xeroc: |   385   |
+```
+
 ### Requirements:
 
 * PHP with Curl
