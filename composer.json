@@ -1,0 +1,18 @@
+{
+    "name": "lukestokes/php-steem-tools",
+    "description": "PHP Tools for STEEM",
+    "type": "library",
+    "license": "mit",
+    "authors": [
+        {
+            "name": "Luke Stokes",
+            "email": "luke.stokes@gmail.com"
+        }
+    ],
+    "require": {},
+      "autoload": {
+          "psr-4": {
+              "SteemTools\\": "src/SteemTools"
+          }
+      }
+}

@@ -1,6 +1,10 @@
 # php-steem-tools
 Various tools and scripts written in PHP for exploring the STEEM blockchain.
 
+*2016-08-14:*
+This code is still under development. Today I started putting things into a modern structure with composer to include a service layer and an SteemAPI class. I'll continue cleaning things up and add some tests as time permits.
+
+
 ## Steem Rate: Interest Rate Calculator for Steem Power
 
 A quick little script I put together for looking at the Steem Power Interest rate and how it changes over time.
