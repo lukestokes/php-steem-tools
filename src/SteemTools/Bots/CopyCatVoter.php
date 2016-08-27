@@ -94,11 +94,13 @@ class CopyCatVoter
         return false;
     }
 
-    public function run($voter_account, $benefactor_account)
+    public function run($voter_account, $account_to_copy)
     {
+        print date('c') . "\n";
+        print "Starting CopyCatVoter for $voter_account who wants to copy $account_to_copy...\n\n";
         $time = time();
         while(true) {
-            if ($this->hasNewVote($benefactor_account)) {
+            if ($this->hasNewVote($account_to_copy)) {
                 print "------------ NEW VOTE! -----------\n";
                 print $this->last_vote['authorperm'] . "\n";
                 print $this->last_vote['time'] . "\n";
