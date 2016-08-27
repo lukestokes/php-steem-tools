@@ -5,8 +5,8 @@ $SteemServiceLayer = new \SteemTools\SteemServiceLayer();
 $api = new \SteemTools\SteemAPI($SteemServiceLayer);
 $ExchangeTransfers = new \SteemTools\Reporting\ExchangeTransfers($api);
 
-$start = '2016-08-07';
-$end = '2016-08-14';
+$start = '2016-08-14';
+$end = '2016-08-21';
 
 /*
 $result = $ExchangeTransfers->getAccountTransferHistory('dantheman', $start, $end);
@@ -15,4 +15,6 @@ var_dump($result);
 */
 
 $ExchangeTransfers->runReport($start, $end);
+
+//$ExchangeTransfers->runDailyReport($start, $end);
 
