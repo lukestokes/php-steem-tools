@@ -11,11 +11,11 @@ $config = array(
     'auto_vote' => true
 );
 
-$Benefactor = new \SteemTools\Bots\Benefactor($api, $config);
+$CopyCatVoter = new \SteemTools\Bots\CopyCatVoter($api, $config);
 
 $account = 'lukestokes';
 $benefactor_account = 'robinhoodwhale';
 
-//$result = $Benefactor->getLastVote($account);
+//$result = $CopyCatVoter->getLastVote($account);
 
-$Benefactor->run($account,$benefactor_account);
+$CopyCatVoter->run($account,$benefactor_account);

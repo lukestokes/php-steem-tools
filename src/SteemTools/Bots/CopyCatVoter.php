@@ -5,7 +5,7 @@ namespace SteemTools\Bots;
 date_default_timezone_set('UTC');
 
 
-class Benefactor
+class CopyCatVoter
 {
     public $SteemAPI;
     public $last_vote = null;
