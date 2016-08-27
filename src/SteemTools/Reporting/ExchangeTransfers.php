@@ -50,6 +50,85 @@ class ExchangeTransfers
         return $transfers;
     }
 
+    public function runDailyReport($start, $end)
+    {
+        // print the header
+        $header = "| Date | ";
+        foreach($this->exchange_accounts as $exchange_account) {
+            $header .= $exchange_account . " | ";
+        }
+        $header .= " Total |\n";
+        $header .= "|:----:|:";
+        foreach($this->exchange_accounts as $exchange_account) {
+            $header .= "-------:|:";
+        }
+        $header .= "----:|\n";
+
+        $sbd_report = $header;
+        $steem_report = $header;
+        $usd_report = $header;
+
+        $startDate = new \DateTime($start);
+        $endDate = new \DateTime($end);
+        $days = $startDate->diff($endDate)->format("%a");
+
+        $sbd_price = $this->SteemAPI->getCurrentMedianHistoryPrice('SBD');
+        $steem_price = $this->SteemAPI->getCurrentMedianHistoryPrice('STEEM');
+        $prices = array('SBD' => $sbd_price, 'STEEM' => $steem_price);
+
+        for ($day = 0; $day < $days; $day++) {
+            $currentDate = clone $startDate;
+            $nextDate = clone $startDate;
+            $currentDate->add(new \DateInterval('P' . $day . 'D'));
+            $nextDate->add(new \DateInterval('P' . ($day+1) . 'D'));
+            $this->getExchangeData($currentDate->format('Y-m-d'), $nextDate->format('Y-m-d'));
+            $balances = $this->getBalances();
+            $usd_balances = array();
+            foreach ($balances as $currency => $account_balances) {
+                foreach ($account_balances as $account => $amount) {
+                    if (!array_key_exists($account, $usd_balances)) {
+                        $usd_balances[$account] = 0;
+                    }
+                    $usd_balances[$account] += $prices[$currency] * $amount;
+                }
+            }
+            //print "First included transfer: " . date('c', $this->min_timestamp) . "\n";
+            //print "Last included transfer: " . date('c', $this->max_timestamp) . "\n";
+            $sbd_report .= "| " . $currentDate->format('Y-m-d') . " | ";
+            $steem_report .= "| " . $currentDate->format('Y-m-d') . " | ";
+            $usd_report .= "| " . $currentDate->format('Y-m-d') . " | ";
+
+            foreach($this->exchange_accounts as $exchange_account) {
+                $sbd_report .= number_format($balances['SBD'][$exchange_account],0) . " | ";
+                $steem_report .= number_format($balances['STEEM'][$exchange_account],0) . " | ";
+                $usd_report .= money_format('%(#6.0n',$usd_balances[$exchange_account]) . " | ";
+                unset($balances['SBD'][$exchange_account]);
+                unset($balances['STEEM'][$exchange_account]);
+                unset($usd_balances[$exchange_account]);
+            }
+            $sbd_report .= number_format(0-array_sum($balances['SBD']), 0) . " |\n";
+            $steem_report .= number_format(0-array_sum($balances['STEEM']), 0) . " |\n";
+            $usd_report .= money_format('%(#6.0n',0-array_sum($usd_balances)) . " |\n";
+
+            $this->min_timestamp = time();
+            $this->max_timestamp = 0;
+        }
+
+        print "## STEEM\n";
+        print $steem_report;
+        print "\n\n\n";
+
+        print "## SBD\n";
+        print $sbd_report;
+        print "\n\n\n";
+
+        print "## USD\n";
+        print $usd_report;
+        print "\n\n\n";
+
+
+    }
+
     public function runReport($start, $end)
     {
         $report_width = 70;
@@ -96,20 +175,21 @@ class ExchangeTransfers
         print "Total SBD transferred: " . number_format(array_sum($balances['SBD']), 3) . "\n";
         print "Total USD transferred: " . money_format('%(#8n',array_sum($usd_balances)) . "\n";
 
-        /*
-        // Exclude steemit account
-        $steem_balances_without_steemit = $balances['STEEM'];
-        $sbd_balances_without_steemit = $balances['SBD'];
-        $usd_balances_without_steemit = $usd_balances;
-        unset($steem_balances_without_steemit['steemit']);
-        unset($sbd_balances_without_steemit['steemit']);
-        unset($usd_balances_without_steemit['steemit']);
 
-        print "\n" . str_pad(" Total Transferred, Excluding Steemit Account ",$report_width,'-',STR_PAD_BOTH) . "\n\n";
-        print "Total STEEM transferred (excluding steemit): " . number_format(array_sum($steem_balances_without_steemit), 3) . "\n";
-        print "Total SBD transferred (excluding steemit): " . number_format(array_sum($sbd_balances_without_steemit), 3) . "\n";
-        print "Total USD transferred (excluding steemit): " . money_format('%(#8n',array_sum($usd_balances_without_steemit)) . "\n";
-        */
+        // Exclude steemit account
+        if (array_key_exists('steemit',$usd_balances)) {
+            $steem_balances_without_steemit = $balances['STEEM'];
+            $sbd_balances_without_steemit = $balances['SBD'];
+            $usd_balances_without_steemit = $usd_balances;
+            unset($steem_balances_without_steemit['steemit']);
+            unset($sbd_balances_without_steemit['steemit']);
+            unset($usd_balances_without_steemit['steemit']);
+
+            print "\n" . str_pad(" Total Transferred, Excluding Steemit Account ",$report_width,'-',STR_PAD_BOTH) . "\n\n";
+            print "Total STEEM transferred (excluding steemit): " . number_format(array_sum($steem_balances_without_steemit), 3) . "\n";
+            print "Total SBD transferred (excluding steemit): " . number_format(array_sum($sbd_balances_without_steemit), 3) . "\n";
+            print "Total USD transferred (excluding steemit): " . money_format('%(#8n',array_sum($usd_balances_without_steemit)) . "\n";
+        }
 
         $withdraws = array_filter($usd_balances, function ($v) {
           return $v < 0;
@@ -298,7 +378,5 @@ class ExchangeTransfers
         }
         return $median;
     }
-
-
 
 }
