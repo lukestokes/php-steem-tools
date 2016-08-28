@@ -109,14 +109,14 @@ class CopyCatVoter
         $time = time();
         while(true) {
             if ($this->hasNewVote($account_to_copy)) {
-                print "------------ NEW VOTE! -----------\n";
+                print "\n------------ NEW VOTE! -----------\n";
                 print $this->last_vote['authorperm'] . "\n";
                 print $this->last_vote['time'] . "\n";
                 print "----------------------------------\n";
                 if (!$this->hasVoted($voter_account)) {
                     if ($this->auto_vote) {
                         print "Voting...\n";
-                        // vote here...
+                        $this->vote($voter_account, $this->last_vote['authorperm']);
                     } else {
                         print "\n";
                         print "Go vote for https://steemit.com" . $this->last_content['url'] . "\n";
@@ -138,7 +138,24 @@ class CopyCatVoter
             print '.';
             sleep($this->looptime_in_seconds);
         }
+    }
 
+    /*
+     * This method uses the command line piston and must have a posting key with no wallet password.
+     */
+    public function vote($voter, $permlink, $weight = 100)
+    {
+        $command = 'piston upvote --voter ' . $voter;
+        $command .= ' --weight ' . $weight;
+        $command .= ' ' . $permlink;
+        $output = array();
+        $return = array();
+        $result = exec($command, $output, $return);
+        /*
+        var_dump($output);
+        var_dump($return);
+        var_dump($result);
+        */
     }
 
 }
