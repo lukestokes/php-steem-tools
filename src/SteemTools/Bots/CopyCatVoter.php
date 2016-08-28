@@ -61,16 +61,21 @@ class CopyCatVoter
             if ($this->last_vote != $last_vote) {
                 $changed = true;
                 $this->last_vote = $last_vote;
-                $author_and_link = $this->getAuthorAndPermLink($this->last_vote['authorperm']);
-                $this->last_content = $this->SteemAPI->getContent(
-                    array(
-                        $author_and_link['author'],
-                        $author_and_link['permlink']
-                        )
-                    );
+                $this->updateContentOfLastVote();
             }
         }
         return $changed;
+    }
+
+    public function updateContentOfLastVote()
+    {
+        $author_and_link = $this->getAuthorAndPermLink($this->last_vote['authorperm']);
+        $this->last_content = $this->SteemAPI->getContent(
+            array(
+                $author_and_link['author'],
+                $author_and_link['permlink']
+                )
+            );
     }
 
     public function isCommentVote($vote, $account)
@@ -84,9 +89,12 @@ class CopyCatVoter
         return array('author' => $author, 'permlink' => $permlink);
     }
 
-    public function hasVoted($account, $content)
+    public function hasVoted($account, $refresh_content = false)
     {
-        foreach ($content['active_votes'] as $active_vote) {
+        if ($refresh_content) {
+            $this->updateContentOfLastVote();
+        }
+        foreach ($this->last_content['active_votes'] as $active_vote) {
             if ($active_vote['voter'] == $account) {
                 return true;
             }
@@ -105,7 +113,7 @@ class CopyCatVoter
                 print $this->last_vote['authorperm'] . "\n";
                 print $this->last_vote['time'] . "\n";
                 print "----------------------------------\n";
-                if (!$this->hasVoted($voter_account,$this->last_content)) {
+                if (!$this->hasVoted($voter_account)) {
                     if ($this->auto_vote) {
                         print "Voting...\n";
                         // vote here...
@@ -119,7 +127,7 @@ class CopyCatVoter
                 }
             } else {
                 if (!$this->auto_vote && (time() - $time) >= $this->reminder_in_seconds) {
-                    if (!$this->hasVoted($voter_account,$this->last_content)) {
+                    if (!$this->hasVoted($voter_account,true)) {
                         print "\n";
                         print "REMINDER: Go vote for https://steemit.com" . $this->last_content['url'] . "\n";
                         print "\n";
