@@ -50,19 +50,14 @@ class ExchangeTransfers
         return $transfers;
     }
 
-    public function runDailyReport($start, $end)
+    public function runHourlyReport($start, $end)
     {
         // print the header
-        $header = "| Date | ";
+        $header = "Date,";
         foreach($this->exchange_accounts as $exchange_account) {
-            $header .= $exchange_account . " | ";
+            $header .= $exchange_account . ",";
         }
-        $header .= " Total |\n";
-        $header .= "|:----:|:";
-        foreach($this->exchange_accounts as $exchange_account) {
-            $header .= "-------:|:";
-        }
-        $header .= "----:|\n";
+        $header .= "Total\n";
 
         $sbd_report = $header;
         $steem_report = $header;
@@ -77,56 +72,64 @@ class ExchangeTransfers
         $prices = array('SBD' => $sbd_price, 'STEEM' => $steem_price);
 
         for ($day = 0; $day < $days; $day++) {
-            $currentDate = clone $startDate;
-            $nextDate = clone $startDate;
-            $currentDate->add(new \DateInterval('P' . $day . 'D'));
-            $nextDate->add(new \DateInterval('P' . ($day+1) . 'D'));
-            $this->getExchangeData($currentDate->format('Y-m-d'), $nextDate->format('Y-m-d'));
-            $balances = $this->getBalances();
-            $usd_balances = array();
-            foreach ($balances as $currency => $account_balances) {
-                foreach ($account_balances as $account => $amount) {
-                    if (!array_key_exists($account, $usd_balances)) {
-                        $usd_balances[$account] = 0;
+            for ($hour = 0; $hour < 24; $hour++) {
+                $currentDate = clone $startDate;
+                $nextDate = clone $startDate;
+                $currentDate->add(new \DateInterval('P' . $day . 'DT' . $hour . 'H'));
+                $nextDate->add(new \DateInterval('P' . ($day+1) . 'DT' . ($hour+1) . 'H'));
+
+                print "Processing " . $currentDate->format('Y-m-d H:i') . "\n";
+
+                $this->getExchangeData($currentDate->format('Y-m-d H:i'), $nextDate->format('Y-m-d H:i'));
+                $balances = $this->getBalances();
+                $usd_balances = array();
+                foreach ($balances as $currency => $account_balances) {
+                    foreach ($account_balances as $account => $amount) {
+                        if (!array_key_exists($account, $usd_balances)) {
+                            $usd_balances[$account] = 0;
+                        }
+                        $usd_balances[$account] += $prices[$currency] * $amount;
                     }
-                    $usd_balances[$account] += $prices[$currency] * $amount;
                 }
-            }
-            //print "First included transfer: " . date('c', $this->min_timestamp) . "\n";
-            //print "Last included transfer: " . date('c', $this->max_timestamp) . "\n";
-            $sbd_report .= "| " . $currentDate->format('Y-m-d') . " | ";
-            $steem_report .= "| " . $currentDate->format('Y-m-d') . " | ";
-            $usd_report .= "| " . $currentDate->format('Y-m-d') . " | ";
+                //print "First included transfer: " . date('c', $this->min_timestamp) . "\n";
+                //print "Last included transfer: " . date('c', $this->max_timestamp) . "\n";
+                $sbd_report .= $currentDate->format('Y-m-d H:i') . ",";
+                $steem_report .= $currentDate->format('Y-m-d H:i') . ",";
+                $usd_report .= $currentDate->format('Y-m-d H:i') . ",";
 
-            foreach($this->exchange_accounts as $exchange_account) {
-                $sbd_report .= number_format($balances['SBD'][$exchange_account],0) . " | ";
-                $steem_report .= number_format($balances['STEEM'][$exchange_account],0) . " | ";
-                $usd_report .= money_format('%(#6.0n',$usd_balances[$exchange_account]) . " | ";
-                unset($balances['SBD'][$exchange_account]);
-                unset($balances['STEEM'][$exchange_account]);
-                unset($usd_balances[$exchange_account]);
-            }
-            $sbd_report .= number_format(0-array_sum($balances['SBD']), 0) . " |\n";
-            $steem_report .= number_format(0-array_sum($balances['STEEM']), 0) . " |\n";
-            $usd_report .= money_format('%(#6.0n',0-array_sum($usd_balances)) . " |\n";
+                foreach($this->exchange_accounts as $exchange_account) {
+                    $sbd_report .= number_format($balances['SBD'][$exchange_account],0,'.','') . ",";
+                    $steem_report .= number_format($balances['STEEM'][$exchange_account],0,'.','') . ",";
+                    $usd_report .= number_format($usd_balances[$exchange_account],0,'.','') . ",";
+                    unset($balances['SBD'][$exchange_account]);
+                    unset($balances['STEEM'][$exchange_account]);
+                    unset($usd_balances[$exchange_account]);
+                }
+                $sbd_report .= number_format(0-array_sum($balances['SBD']), 0,'.','') . "\n";
+                $steem_report .= number_format(0-array_sum($balances['STEEM']), 0,'.','') . "\n";
+                $usd_report .= number_format(0-array_sum($usd_balances), 0,'.','') . "\n";
 
-            $this->min_timestamp = time();
-            $this->max_timestamp = 0;
+                $this->min_timestamp = time();
+                $this->max_timestamp = 0;
+            }
+
+            file_put_contents('STEEM.txt', $steem_report);
+            file_put_contents('SBD.txt', $sbd_report);
+            file_put_contents('USD.txt', $sbd_report);
+
+            print "## STEEM\n";
+            print $steem_report;
+            print "\n\n\n";
+
+            print "## SBD\n";
+            print $sbd_report;
+            print "\n\n\n";
+
+            print "## USD\n";
+            print $usd_report;
+            print "\n\n\n";
+
         }
-
-        print "## STEEM\n";
-        print $steem_report;
-        print "\n\n\n";
-
-        print "## SBD\n";
-        print $sbd_report;
-        print "\n\n\n";
-
-        print "## USD\n";
-        print $usd_report;
-        print "\n\n\n";
-
-
     }
 
     public function runReport($start, $end)

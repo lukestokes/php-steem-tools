@@ -16,10 +16,10 @@ class SteemAPI
     {
         // TEMP: until I figure this out...
         if ($currency == 'STEEM') {
-            return 1.42;
+            return 0.80;
         }
         if ($currency == 'SBD') {
-            return 0.89;
+            return 0.92;
         }
 
         $result = $this->SteemServiceLayer->call('get_current_median_history_price');

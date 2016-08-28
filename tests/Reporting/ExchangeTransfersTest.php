@@ -5,16 +5,13 @@ $SteemServiceLayer = new \SteemTools\SteemServiceLayer();
 $api = new \SteemTools\SteemAPI($SteemServiceLayer);
 $ExchangeTransfers = new \SteemTools\Reporting\ExchangeTransfers($api);
 
-$start = '2016-08-14';
-$end = '2016-08-21';
+$start = '2016-08-21';
+$end = '2016-08-28';
 
-/*
-$result = $ExchangeTransfers->getAccountTransferHistory('dantheman', $start, $end);
-$result = $ExchangeTransfers->getTransfers($result);
-var_dump($result);
-*/
+print "Begin time: " . date('c') . "\n";
 
 $ExchangeTransfers->runReport($start, $end);
+//$ExchangeTransfers->runHourlyReport($start, $end);
 
-//$ExchangeTransfers->runDailyReport($start, $end);
+print "End time: " . date('c') . "\n";
 
