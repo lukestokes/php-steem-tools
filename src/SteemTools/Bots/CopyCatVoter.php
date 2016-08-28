@@ -43,7 +43,7 @@ class CopyCatVoter
         $last_vote = null;
         foreach($votes as $vote) {
             $include_vote = true;
-            if ($vote['percent'] != 10000) {
+            if ($vote['percent'] != 10000 && $vote['percent'] != 0) {
                 $include_vote = false;
             }
             if (!$this->follow_vote_comments && $this->isCommentVote($vote,$account)) {
@@ -110,13 +110,19 @@ class CopyCatVoter
         while(true) {
             if ($this->hasNewVote($account_to_copy)) {
                 print "\n------------ NEW VOTE! -----------\n";
-                print $this->last_vote['authorperm'] . "\n";
+                print "https://steemit.com" . $this->last_content['url'] . "\n";
                 print $this->last_vote['time'] . "\n";
                 print "----------------------------------\n";
                 if (!$this->hasVoted($voter_account)) {
                     if ($this->auto_vote) {
-                        print "Voting...\n";
-                        $this->vote($voter_account, $this->last_vote['authorperm']);
+                        $weight = 100;
+                        if ($vote['percent'] == 0) {
+                            $weight = 0;
+                            print "**** UNOVOTING ****\n";
+                        } else {
+                            print "Voting...\n";
+                        }
+                        $this->vote($voter_account, $this->last_vote['authorperm'], $weight);
                     } else {
                         print "\n";
                         print "Go vote for https://steemit.com" . $this->last_content['url'] . "\n";

@@ -5,7 +5,7 @@ $SteemServiceLayer = new \SteemTools\SteemServiceLayer();
 $api = new \SteemTools\SteemAPI($SteemServiceLayer);
 
 $config = array(
-    'follow_vote_comments' => true,
+    'follow_vote_comments' => false,
     //'looptime_in_seconds' => 1,
     //'reminder_in_seconds' => 3,
     'auto_vote' => true
