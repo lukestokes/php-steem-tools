@@ -182,8 +182,6 @@ class CopyCatVoter
         $curration_rewards = $this->SteemAPI->getAccountHistoryFiltered($account, array('curate_reward'),$start,$end);
         $curration_rewards = $this->SteemAPI->getOpData($curration_rewards);
 
-        //var_dump($curration_rewards);
-
         foreach ($curration_rewards as $curration_reward) {
             $key = $curration_reward['comment_author'] . '/' . $curration_reward['comment_permlink'];
             if (array_key_exists($key, $currations)) {
@@ -191,11 +189,14 @@ class CopyCatVoter
             }
         }
 
+        $report_string = "Curation Reward (SP),permlink\n";
         foreach ($currations as $curration) {
-            print $curration['curate_reward'] . ',' . $curration['permlink'] . "\n";
+            $line = $curration['curate_reward'] . ',' . $curration['permlink'] . "\n";
+            $report_string .= $line;
+            print $line;
         }
 
-        //var_dump($currations);
+        file_put_contents('copy_cat_voter_history_with_curation_rewards_' . date('Y-m-d') . '.txt', $report_string);
     }
 
 }
