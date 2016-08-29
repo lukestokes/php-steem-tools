@@ -126,4 +126,110 @@ class SteemAPI
 */
     }
 
+
+    // functions for filtering through account history
+    public function getResultInfo($blocks)
+    {
+        $max_timestamp = 0;
+        $min_timestamp = 0;
+        $max_id = 0;
+        $min_id = 0;
+        foreach($blocks as $block) {
+            $timestamp = strtotime($block[1]['timestamp']);
+            if ($timestamp >= $max_timestamp) {
+                $max_timestamp = $timestamp;
+                $max_id = $block[0];
+            }
+            if (!$min_timestamp) {
+                $min_timestamp = $max_timestamp;
+            }
+            if ($timestamp <= $min_timestamp) {
+                $min_timestamp = $timestamp;
+                $min_id = $block[0];
+            }
+        }
+        return array(
+                'max_id' => $max_id,
+                'max_timestamp' => $max_timestamp,
+                'min_id' => $min_id,
+                'min_timestamp' => $min_timestamp
+            );
+    }
+
+    public function getAccountHistoryFiltered($account, $types, $start, $end)
+    {
+        $start_timestamp = strtotime($start);
+        $end_timestamp = strtotime($end);
+        $limit = 2000;
+        $params = array($account, -1, $limit);
+        $result = $this->getAccountHistory($params);
+        $info = $this->getResultInfo($result);
+        $filtered_results = $this->filterAccountHistory($result,$start_timestamp,$end_timestamp,$types);
+
+        while ($start_timestamp < $info['min_timestamp']) {
+            $from = $info['min_id'];
+            if ($limit > $from) {
+                $limit = $from;
+            }
+            $params = array($account, $info['min_id'], $limit);
+            $result = $this->getAccountHistory($params);
+            $filtered_results = array_merge(
+                $filtered_results,
+                $this->filterAccountHistory($result,$start_timestamp,$end_timestamp,$types)
+                );
+            $info = $this->getResultInfo($result);
+        }
+
+        return $filtered_results;
+    }
+
+    public function filterAccountHistory($result, $start_timestamp, $end_timestamp, $ops)
+    {
+        $filtered_results = array();
+        if (count($result)) {
+            foreach($result as $block) {
+                $timestamp = strtotime($block[1]['timestamp']);
+                if (in_array($block[1]['op'][0], $ops)
+                    && $timestamp >= $start_timestamp
+                    && $timestamp <= $end_timestamp
+                    ) {
+                    $filtered_results[] = $block;
+                }
+            }
+        }
+        return $filtered_results;
+    }
+
+    public function getOpData($result)
+    {
+        $data = array();
+        foreach($result as $block) {
+            $data[] = $block[1]['op'][1];
+        }
+        return $data;
+    }
+
+    private $dynamic_global_properties = array();
+    public function getProps($refresh = false)
+    {
+        if ($refresh || count($this->dynamic_global_properties) == 0) {
+            $this->dynamic_global_properties = $this->SteemServiceLayer->call('get_dynamic_global_properties', array());
+        }
+        return $this->dynamic_global_properties;
+    }
+
+    public function getConversionRate() {
+        $props = $this->getProps();
+        $values = array(
+            'total_vests' => (float) $props['total_vesting_shares'],
+            'total_vest_steem' => (float) $props['total_vesting_fund_steem'],
+        );
+        return $values;
+    }
+
+    public function vest2sp($value)
+    {
+        $values = $this->getConversionRate();
+        return round($values['total_vest_steem'] * ($value / $values['total_vests']), 3);
+    }
 }

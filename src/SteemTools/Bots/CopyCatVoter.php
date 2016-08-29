@@ -116,7 +116,7 @@ class CopyCatVoter
                 if (!$this->hasVoted($voter_account)) {
                     if ($this->auto_vote) {
                         $weight = 100;
-                        if ($vote['percent'] == 0) {
+                        if ($this->last_vote['percent'] == 0) {
                             $weight = 0;
                             print "**** UNOVOTING ****\n";
                         } else {
@@ -162,6 +162,40 @@ class CopyCatVoter
         var_dump($return);
         var_dump($result);
         */
+        file_put_contents('copy_cat_voter_history.txt', '"' . date('c') . '","' . $permlink . "\"\n", FILE_APPEND);
+    }
+
+    public function currationReport($account)
+    {
+        $currations = array();
+        $file = @fopen("copy_cat_voter_history.txt","r");
+        $count = 0;
+        while(!feof($file)) {
+            $count++;
+            $line = fgetcsv($file);
+            $currations[trim($line[1])] = array('time' => trim($line[0]), 'permlink' => trim($line[1]), 'curate_reward' => 0.0);
+        }
+        fclose($file);
+
+        $start = date('c',strtotime('last week'));
+        $end = date('c');
+        $curration_rewards = $this->SteemAPI->getAccountHistoryFiltered($account, array('curate_reward'),$start,$end);
+        $curration_rewards = $this->SteemAPI->getOpData($curration_rewards);
+
+        //var_dump($curration_rewards);
+
+        foreach ($curration_rewards as $curration_reward) {
+            $key = $curration_reward['comment_author'] . '/' . $curration_reward['comment_permlink'];
+            if (array_key_exists($key, $currations)) {
+                $currations[$key]['curate_reward'] = $this->SteemAPI->vest2sp(str_replace(' VESTS', '', $curration_reward['reward']));
+            }
+        }
+
+        foreach ($currations as $curration) {
+            print $curration['curate_reward'] . ',' . $curration['permlink'] . "\n";
+        }
+
+        //var_dump($currations);
     }
 
 }
