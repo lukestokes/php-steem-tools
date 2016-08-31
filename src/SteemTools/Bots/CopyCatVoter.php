@@ -9,15 +9,16 @@ class CopyCatVoter
 {
     public $SteemAPI;
     public $last_vote = null;
-    public $last_content_id = 0;
     public $last_content = null;
     public $max_timestamp = 0;
+    public $last_post_is_by_followed_author = false;
 
     // config params
     public $follow_vote_comments = false;
     public $looptime_in_seconds = 15;
     public $reminder_in_seconds = 60;
     public $auto_vote = false;
+    public $delay_in_minutes_to_vote_post_by_followed_author = 30;
 
     public function __construct($SteemAPI, $config = array())
     {
@@ -34,6 +35,9 @@ class CopyCatVoter
         if (array_key_exists('auto_vote', $config)) {
             $this->auto_vote = $config['auto_vote'];
         }
+        if (array_key_exists('delay_in_minutes_to_vote_post_by_followed_author', $config)) {
+            $this->delay_in_minutes_to_vote_post_by_followed_author = $config['delay_in_minutes_to_vote_post_by_followed_author'];
+        }
     }
 
     public function hasNewVote($account)
@@ -46,7 +50,7 @@ class CopyCatVoter
             if ($vote['percent'] != 10000 && $vote['percent'] != 0) {
                 $include_vote = false;
             }
-            if (!$this->follow_vote_comments && $this->isCommentVote($vote,$account)) {
+            if (!$this->follow_vote_comments && $this->isCommentVote($vote)) {
                 $include_vote = false;
             }
             if ($include_vote) {
@@ -78,9 +82,9 @@ class CopyCatVoter
             );
     }
 
-    public function isCommentVote($vote, $account)
+    public function isCommentVote($vote)
     {
-        return (strpos($vote['authorperm'], $account . '/re-') === 0);
+        return (strpos($vote['authorperm'], '/re-') !== false);
     }
 
     public function getAuthorAndPermLink($authorperm)
@@ -121,6 +125,14 @@ class CopyCatVoter
                             print "**** UNOVOTING ****\n";
                         } else {
                             print "Voting...\n";
+                            if ($this->last_content['author'] == $account_to_copy && $this->last_content['depth'] == 0) {
+                                print "Looks like this is a new root post by the account we're copying.\n";
+                                print "Waiting " . $this->delay_in_minutes_to_vote_post_by_followed_author . " minutes to vote.\n";
+                                for($i = 0; $i < $this->delay_in_minutes_to_vote_post_by_followed_author; $i++) {
+                                    print "Voting in " . ($this->delay_in_minutes_to_vote_post_by_followed_author - $i) . " minutes...\n";
+                                    sleep(60);
+                                }
+                            }
                         }
                         $this->vote($voter_account, $this->last_vote['authorperm'], $weight);
                     } else {
@@ -170,12 +182,14 @@ class CopyCatVoter
         $currations = array();
         $file = @fopen("copy_cat_voter_history.txt","r");
         $count = 0;
-        while(!feof($file)) {
-            $count++;
-            $line = fgetcsv($file);
-            $currations[trim($line[1])] = array('time' => trim($line[0]), 'permlink' => trim($line[1]), 'curate_reward' => 0.0);
+        if ($file) {
+            while(!feof($file)) {
+                $count++;
+                $line = fgetcsv($file);
+                $currations[trim($line[1])] = array('time' => trim($line[0]), 'permlink' => trim($line[1]), 'curate_reward' => 0.0);
+            }
+            fclose($file);
         }
-        fclose($file);
 
         $start = date('c',strtotime('last week'));
         $end = date('c');
@@ -189,14 +203,22 @@ class CopyCatVoter
             }
         }
 
+        $total_sp = 0;
         $report_string = "Curation Reward (SP),permlink\n";
         foreach ($currations as $curration) {
             $line = $curration['curate_reward'] . ',' . $curration['permlink'] . "\n";
             $report_string .= $line;
+            $total_sp += $curration['curate_reward'];
             print $line;
         }
 
-        file_put_contents('copy_cat_voter_history_with_curation_rewards_' . date('Y-m-d') . '.txt', $report_string);
+        print "\n\nTotal SP Earned by CopCatVoter: " . $total_sp . "\n\n";
+
+        $filename = 'copy_cat_voter_history_with_curation_rewards_' . date('Y-m-d') . '.txt';
+
+        file_put_contents($filename, $report_string);
+
+        print "File saved: " . $filename;
     }
 
 }
