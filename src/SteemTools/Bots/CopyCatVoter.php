@@ -73,7 +73,7 @@ class CopyCatVoter
 
     public function updateContentOfLastVote()
     {
-        $author_and_link = $this->getAuthorAndPermLink($this->last_vote['authorperm']);
+        $author_and_link = $this->SteemAPI->getAuthorAndPermLink($this->last_vote['authorperm']);
         $this->last_content = $this->SteemAPI->getContent(
             array(
                 $author_and_link['author'],
@@ -85,12 +85,6 @@ class CopyCatVoter
     public function isCommentVote($vote)
     {
         return (strpos($vote['authorperm'], '/re-') !== false);
-    }
-
-    public function getAuthorAndPermLink($authorperm)
-    {
-        list($author,$permlink,$original) = explode('/',$authorperm, 3);
-        return array('author' => $author, 'permlink' => $permlink);
     }
 
     public function hasVoted($account, $refresh_content = false)

@@ -232,4 +232,11 @@ class SteemAPI
         $values = $this->getConversionRate();
         return round($values['total_vest_steem'] * ($value / $values['total_vests']), 3);
     }
+
+    public function getAuthorAndPermLink($authorperm)
+    {
+        list($author,$permlink,$original) = explode('/',$authorperm, 3);
+        return array('author' => $author, 'permlink' => $permlink);
+    }
+
 }
