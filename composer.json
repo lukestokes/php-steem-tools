@@ -9,7 +9,9 @@
             "email": "luke.stokes@gmail.com"
         }
     ],
-    "require": {},
+    "require": {
+        "fguillot/json-rpc": "@stable"
+    },
       "autoload": {
           "psr-4": {
               "SteemTools\\": "src/SteemTools"
