@@ -6,19 +6,10 @@ $params = array();
 
 $SteemServiceLayer = new \SteemTools\SteemServiceLayer($params);
 $api = new \SteemTools\SteemAPI($SteemServiceLayer);
-//$FollowerStats = new \SteemTools\Reporting\FollowerStats($api);
-
-//$result = $FollowerStats->getAllAccounts();
-//var_dump(count($result));
-
-//$FollowerStats->printTopFollowed();
-
-//$FollowerStats->compareTwoReports('saveFollowerCounts_data.txt','saveFollowerCounts_data_2016-08-18.txt');
-
-
 
 $witness_account = "lukestokes.mhth";
 $controller_account = "lukestokes";
+
 $followers = $api->cachedCall('getFollowers', $controller_account, true);
 $accounts = array();
 foreach($followers as $follower) {
@@ -59,7 +50,7 @@ function showPossibilities($top_accounts,$accounts,$witness_account,$show_availa
         if ($print_account && $show_available_only) {
             $print_account = !($proxy != '');
         }
-        $pad_amount = 30;
+        $pad_amount = 20;
         if ($print_account) {
             if ($include_vests) {
                 $available_vests += $accounts[$account_name]['vesting_shares'];
@@ -78,25 +69,3 @@ function showPossibilities($top_accounts,$accounts,$witness_account,$show_availa
 
 showPossibilities($top_accounts,$accounts,$witness_account);
 showPossibilities($top_accounts,$accounts,$witness_account,true);
-
-//var_dump($top_accounts);
-
-/*
-$top_accounts = array_keys($accounts_by_vest);
-for ($i = 0; $i < 20; $i++) {
-    print $top_accounts[$i] . "\n";
-}
-*/
-
-//var_dump(count($accounts_with_info));
-//var_dump(array_pop($accounts_with_info));
-
-
-//$accounts_with_info = $api->getAccounts(array('tombstone'));
-//var_dump($accounts_with_info);
-
-
-//vesting_shares
-//proxy
-//witnesses_voted_for
-// witness_votes

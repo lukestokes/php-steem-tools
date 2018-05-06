@@ -11,26 +11,85 @@ class SteemAPI
         $this->SteemServiceLayer = $SteemServiceLayer;
     }
 
-    // customized
-    public function getCurrentMedianHistoryPrice($currency = 'STEEM')
+    public function getPriceHistoryInUSD($start, $end)
     {
-        // TEMP: until I figure this out...
-        if ($currency == 'STEEM') {
-            return 0.80;
-        }
-        if ($currency == 'SBD') {
-            return 0.92;
+        $btc_prices_in_usd = json_decode(file_get_contents('https://api.coindesk.com/v1/bpi/historical/close.json'), true);
+
+        $start_timestamp = strtotime($start);
+        $end_timestamp = strtotime($end);
+        $sbd_prices = json_decode(file_get_contents('https://min-api.cryptocompare.com/data/histoday?fsym=SBD*&tsym=BTC&limit=7&aggregate=1&toTs=' . $end_timestamp), true);
+        $steem_prices = json_decode(file_get_contents('https://min-api.cryptocompare.com/data/histoday?fsym=STEEM&tsym=BTC&limit=7&aggregate=1&toTs=' . $end_timestamp), true);
+
+        $price_history = array();
+        $startDate = new \DateTime($start);
+        $endDate = new \DateTime($end);
+        $days = $startDate->diff($endDate)->format("%a");
+        for ($day = 0; $day < $days; $day++) {
+            $currentDate = clone $startDate;
+            $nextDate = clone $startDate;
+            $currentDate->add(new \DateInterval('P' . $day . 'D'));
+            $nextDate->add(new \DateInterval('P' . ($day+1) . 'D'));
+            $btc_price = $btc_prices_in_usd['bpi'][$currentDate->format("Y-m-d")];
+            $timestamp = strtotime($currentDate->format("Y-m-d"));
+            foreach ($sbd_prices['Data'] as $line) {
+                if ($line['time'] == $timestamp) {
+                    $sbd_price = $line['close'] * $btc_price;
+                }
+            }
+            foreach ($steem_prices['Data'] as $line) {
+                if ($line['time'] == $timestamp) {
+                    $steem_price = $line['close'] * $btc_price;
+                }
+            }
+            $price_history[$currentDate->format("Y-m-d")] = array(
+                'BTC' => $btc_price,
+                'SBD' => $sbd_price,
+                'STEEM' => $steem_price
+                );
         }
 
-        $result = $this->SteemServiceLayer->call('get_current_median_history_price');
-        $price = 0;
-        if ($currency == 'STEEM') {
-            $price = $result['base'] * $result['quote'];
+        /*
+        $end_timestamp = strtotime($end);
+        $sbd_prices = json_decode(file_get_contents('https://poloniex.com/public?command=returnChartData&currencyPair=BTC_SBD&start=' . $start_timestamp . '&end=' . $end_timestamp . '&period=86400'), true);
+        $steem_prices = json_decode(file_get_contents('https://poloniex.com/public?command=returnChartData&currencyPair=BTC_STEEM&start=' . $start_timestamp . '&end=' . $end_timestamp . '&period=86400'), true);
+
+        $price_history = array();
+
+        $startDate = new \DateTime($start);
+        $endDate = new \DateTime($end);
+        $days = $startDate->diff($endDate)->format("%a");
+        for ($day = 0; $day < $days; $day++) {
+            $currentDate = clone $startDate;
+            $nextDate = clone $startDate;
+            $currentDate->add(new \DateInterval('P' . $day . 'D'));
+            $nextDate->add(new \DateInterval('P' . ($day+1) . 'D'));
+
+            $btc_price = $btc_prices_in_usd['bpi'][$currentDate->format("Y-m-d")];
+            $sbd_price = $sbd_prices[$day]['weightedAverage'] * $btc_price;
+            $steem_price = $steem_prices[$day]['weightedAverage'] * $btc_price;
+
+            $price_history[$currentDate->format("Y-m-d")] = array(
+                'BTC' => $btc_price,
+                'SBD' => $sbd_price,
+                'STEEM' => $steem_price
+                );
         }
-        if ($currency == 'SBD') {
-            $price = $result['base'] * $result['quote'];
+        */
+
+        $price_total_sbd = 0;
+        $price_total_steem = 0;
+        foreach($price_history as $price) {
+            $price_total_sbd += $price['SBD'];
+            $price_total_steem += $price['STEEM'];
         }
-        return $price;
+        $price_history['average'] = array(
+            'SBD' => $price_total_sbd / $days,
+            'STEEM' => $price_total_steem / $days
+            );
+
+        //var_dump($price_history);
+
+        return $price_history;
     }
 
     public function getContent($params)
@@ -101,7 +160,8 @@ class SteemAPI
 
     public function cachedCall($call, $params, $serialize = false, $batch = false, $batch_size = 100)
     {
-        $data = @file_get_contents($call . '_data.txt');
+        $filename = 'cache/' . $call . md5(serialize($params)) . '_data.txt';
+        $data = @file_get_contents($filename);
         if ($data) {
             if ($serialize) {
                 $data = unserialize($data);
@@ -115,7 +175,7 @@ class SteemAPI
         } else {
             $data_for_file = $data;
         }
-        file_put_contents($call . '_data.txt',$data_for_file);
+        file_put_contents($filename,$data_for_file);
         return $data;
 /*
         $start = @file_get_contents($call . '_start.txt');

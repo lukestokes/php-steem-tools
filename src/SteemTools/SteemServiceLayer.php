@@ -4,7 +4,10 @@ namespace SteemTools;
 class SteemServiceLayer
 {
     private $debug = false;
-    private $webservice_url = 'https://node.steem.ws';
+    //private $webservice_url = 'https://node.steem.ws';
+    //private $webservice_url = 'https://steemd.steemit.com';
+    //private $webservice_url = 'https://steemd.pevo.science';
+    private $webservice_url = 'https://api.steemit.com';
     private $throw_exception = false;
 
     public function __construct($config = array())
@@ -23,11 +26,20 @@ class SteemServiceLayer
     public function call($method, $params = array()) {
         $request = $this->getRequest($method, $params);
         $response = $this->curl($request);
-        if (array_key_exists('error', $response)) {
+        if (is_null($response) || array_key_exists('error', $response)) {
             if ($this->throw_exception) {
-                throw new Exception($response['error']);
+                if (is_null($response)) {
+                    throw new Exception($method);
+                } else {
+                    throw new Exception($response['error']);
+                }
             } else {
-                var_dump($response['error']);
+                if (is_null($response)) {
+                    var_dump($method);
+                    var_dump($params);
+                } else {
+                    var_dump($response['error']);
+                }
                 die();
             }
         }
