@@ -601,6 +601,7 @@ foreach ($steem_monster_data as $i => $data) {
 
 require '../../vendor/autoload.php';
 ini_set('memory_limit', '1G');
+//$SteemServiceLayer = new \SteemTools\SteemServiceLayer(array('webservice_url' => 'https://wallet.steem.ws', 'debug' => true));
 $SteemServiceLayer = new \SteemTools\SteemServiceLayer();
 $api = new \SteemTools\SteemAPI($SteemServiceLayer);
 $account = 'steemmonsters';
@@ -654,6 +655,7 @@ foreach ($transfers as $transfer) {
 			'sale_amount' => $transfer['amount'],
 			'sale_currency' => $transfer['currency']
 		);
+
 
 		// doesn't work as I don't have a full node with transaction id indexing on :(
 		//$result = $SteemServiceLayer->call('get_transaction', array($sale['transaction_id']));

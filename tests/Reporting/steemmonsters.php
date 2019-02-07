@@ -606,11 +606,11 @@ $api = new \SteemTools\SteemAPI($SteemServiceLayer);
 $account = 'steemmonsters';
 $limit = 2000;
 $start = '2018-05-01';
-$end = '2018-06-17';
+$end = '2018-06-30';
 
 $params = array($account, -1, $limit);
-$result = $api->getAccountHistory($params);
-//$result = $api->cachedCall('getAccountHistory', $params, true);
+//$result = $api->getAccountHistory($params);
+$result = $api->cachedCall('getAccountHistory', $params, true);
 $info = getResultInfo($result);
 $start_timestamp = strtotime($start);
 $end_timestamp = strtotime($end);
@@ -628,8 +628,8 @@ while ($start_timestamp < $info['min_timestamp']) {
         break;
     }
     $params = array($account, $info['min_id'], $limit);
-    $result = $api->getAccountHistory($params);
-    //$result = $api->cachedCall('getAccountHistory', $params, true);
+    //$result = $api->getAccountHistory($params);
+    $result = $api->cachedCall('getAccountHistory', $params, true);
     $filtered_results = array_merge(
         $filtered_results,
         filterAccountHistory($result,$start_timestamp,$end_timestamp,array('custom_json'))
