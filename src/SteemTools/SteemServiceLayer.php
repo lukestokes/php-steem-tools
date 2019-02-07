@@ -8,6 +8,11 @@ class SteemServiceLayer
     //private $webservice_url = 'https://steemd.steemit.com';
     //private $webservice_url = 'https://steemd.pevo.science';
     private $webservice_url = 'https://api.steemit.com';
+    //private $webservice_url = 'https://gtg.steem.house:8090';
+    //private $webservice_url = 'https://steemd.privex.io';
+    //'steemd.minnowsupportproject.org'
+    //'rpc.buildteam.io '
+    //'steemd.privex.io '
     private $throw_exception = false;
 
     public function __construct($config = array())
@@ -35,9 +40,13 @@ class SteemServiceLayer
                 }
             } else {
                 if (is_null($response)) {
+                    print "We got no response...\n";
                     var_dump($method);
                     var_dump($params);
                 } else {
+                    print "We got an error response...\n";
+                    var_dump($method);
+                    var_dump($params);
                     var_dump($response['error']);
                 }
                 die();
@@ -51,7 +60,7 @@ class SteemServiceLayer
             "jsonrpc" => "2.0",
             "method" => $method,
             "params" => $params,
-            "id" => 0
+            "id" => 1
             );
         $request_json = json_encode($request);
 

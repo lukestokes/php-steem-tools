@@ -10,8 +10,8 @@ class ExchangeTransfers
 {
     public $SteemAPI;
     public $number_of_top_accounts_to_show = 50;
-    public $exchange_accounts = array('poloniex', 'bittrex', 'blocktrades', 'openledger', 'hitbtc', 'changelly','freewallet.org','coinpayments.net','rudex','binance','steemexchanger','upbit','gopax','huobi');
-    public $linked_exchange_accounts = array('hitbtc' => array('hitbtc-exchange','hitbtc-payout'), 'freewallet.org' => array('freewallet.org','freewallet'), 'openledger' => array('openledger','openledger-dex'), 'binance' => array('binance-hot','deepcrypto8'), 'upbit' => array('upbit-exchange','myupbit'), 'gopax' => array('gopax','gopax-deposit'), 'huobi' => array('huobi-pro','huobi-withdrawal'));
+    public $exchange_accounts = array('poloniex', 'bittrex', 'blocktrades', 'openledger', 'hitbtc', 'changelly','freewallet.org','coinpayments.net','rudex','binance','steemexchanger','upbit','gopax','huobi','bithumb');
+    public $linked_exchange_accounts = array('hitbtc' => array('hitbtc-exchange','hitbtc-payout'), 'freewallet.org' => array('freewallet.org','freewallet'), 'openledger' => array('openledger','openledger-dex'), 'binance' => array('binance-hot','deepcrypto8'), 'upbit' => array('upbit-exchange','myupbit','upbitsteemhot','upbituserwallet'), 'gopax' => array('gopax','gopax-deposit'), 'huobi' => array('huobi-pro','huobi-withdrawal'), 'bithumb' => array('bithumb.hot','bithumb.live'));
     public $exchange_data = array();
     public $min_timestamp = 0;
     public $max_timestamp = 0;
@@ -75,17 +75,17 @@ class ExchangeTransfers
 /*
 if ($transfer['to'] == "" || $transfer['from'] == "") {
     var_dump($transfer);
+    var_dump($block);
 }
-*/
-/*
+
 if ($transfer['to'] == "huobi" || $transfer['from'] == "huobi") {
     var_dump($transfer);
 }
 */
-
-
-            $transfers[] = $transfer;
-
+            // exclude blocktrade powerups 
+            if ($transfer['to'] != "") {
+                $transfers[] = $transfer;
+            }
         }
         return $transfers;
     }
@@ -229,33 +229,21 @@ if ($transfer['to'] == "huobi" || $transfer['from'] == "huobi") {
         print "Total USD transferred: " . money_format('%(#8n',array_sum($usd_balances)) . "\n";
 
 
-        // Exclude steemit account
-        if (array_key_exists('steemit',$usd_balances)) {
-            $steem_balances_without_steemit = $balances['STEEM'];
-            $sbd_balances_without_steemit = $balances['SBD'];
-            $usd_balances_without_steemit = $usd_balances;
-            unset($steem_balances_without_steemit['steemit']);
-            unset($sbd_balances_without_steemit['steemit']);
-            unset($usd_balances_without_steemit['steemit']);
-
-            print "\n" . str_pad(" Total Transferred, Excluding Steemit Account ",$report_width,'-',STR_PAD_BOTH) . "\n\n";
-            print "Total STEEM transferred (excluding steemit): " . number_format(array_sum($steem_balances_without_steemit), 3) . "\n";
-            print "Total SBD transferred (excluding steemit): " . number_format(array_sum($sbd_balances_without_steemit), 3) . "\n";
-            print "Total USD transferred (excluding steemit): " . money_format('%(#8n',array_sum($usd_balances_without_steemit)) . "\n";
-        }
-
-        if (array_key_exists('steemit2',$usd_balances)) {
-            $steem_balances_without_steemit = $balances['STEEM'];
-            $sbd_balances_without_steemit = $balances['SBD'];
-            $usd_balances_without_steemit = $usd_balances;
-            unset($steem_balances_without_steemit['steemit2']);
-            unset($sbd_balances_without_steemit['steemit2']);
-            unset($usd_balances_without_steemit['steemit2']);
-
-            print "\n" . str_pad(" Total Transferred, Excluding Steemit2 Account ",$report_width,'-',STR_PAD_BOTH) . "\n\n";
-            print "Total STEEM transferred (excluding steemit2): " . number_format(array_sum($steem_balances_without_steemit), 3) . "\n";
-            print "Total SBD transferred (excluding steemit2): " . number_format(array_sum($sbd_balances_without_steemit), 3) . "\n";
-            print "Total USD transferred (excluding steemit2): " . money_format('%(#8n',array_sum($usd_balances_without_steemit)) . "\n";
+        // Exclude steemit accounts
+        $steemit_accounts = array('steemit','steemit2','steemit3');
+        foreach ($steemit_accounts as $steemit_account) {
+            if (array_key_exists($steemit_account,$usd_balances)) {
+                $steem_balances_without_steemit = $balances['STEEM'];
+                $sbd_balances_without_steemit = $balances['SBD'];
+                $usd_balances_without_steemit = $usd_balances;
+                unset($steem_balances_without_steemit[$steemit_account]);
+                unset($sbd_balances_without_steemit[$steemit_account]);
+                unset($usd_balances_without_steemit[$steemit_account]);
+                print "\n" . str_pad(" Total Transferred, Excluding Steemit, inc Account " . $steemit_account,$report_width,'-',STR_PAD_BOTH) . "\n\n";
+                print "Total STEEM transferred (excluding " . $steemit_account . "): " . number_format(array_sum($steem_balances_without_steemit), 3) . "\n";
+                print "Total SBD transferred (excluding " . $steemit_account . "): " . number_format(array_sum($sbd_balances_without_steemit), 3) . "\n";
+                print "Total USD transferred (excluding " . $steemit_account . "): " . money_format('%(#8n',array_sum($usd_balances_without_steemit)) . "\n";
+            }
         }
 
         $withdraws = array_filter($usd_balances, function ($v) {

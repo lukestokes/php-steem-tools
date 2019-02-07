@@ -606,7 +606,9 @@ $api = new \SteemTools\SteemAPI($SteemServiceLayer);
 $account = 'steemmonsters';
 $limit = 2000;
 $start = '2018-07-12';
-$end = '2018-07-17';
+$end = '2018-07-19';
+
+print "\n\nBegin time: " . date('c') . "\n\n";
 
 $params = array($account, -1, $limit);
 $result = $api->getAccountHistory($params);
@@ -655,9 +657,10 @@ foreach ($transfers as $transfer) {
 
 		// doesn't work as I don't have a full node with transaction id indexing on :(
 		//$result = $SteemServiceLayer->call('get_transaction', array($sale['transaction_id']));
+		//var_dump($result);
+		//die();
 
 		// instead we get hacky and screnscrape steemd. :(
-		/*
 		$html = file_get_contents('https://steemd.com/tx/' . $sale['transaction_id']);
 		$doc = new \DOMDocument();
 		@$doc->loadHTML($html);
@@ -673,14 +676,13 @@ foreach ($transfers as $transfer) {
 			$card = substr($text, $pos, ($end_pos-$pos));
 		}
 		$sale['card'] = $card;
-		*/
 		$sales[] = $sale;
 	}
 }
 
 //var_dump($sales);
 
-$price_history = $api->getPriceHistoryInUSD('2018-07-14', '2018-07-15');
+$price_history = $api->getPriceHistoryInUSD('2018-07-14', '2018-07-19');
 
 $total_sales_STEEM = 0;
 $total_sales_SBD = 0;
@@ -731,40 +733,56 @@ print "**Average Sale Price:** $" . number_format($total_sales_USD/count($sales)
 print "**Highest Value Trade:** $" . number_format($highest_sale_price,2) . "\n";
 
 uasort($sellers, function($a, $b) {
-    return  $b['sales'] - $a['sales'];
+    return  $a['amount_usd'] - $b['amount_usd'];
 });
 
 uasort($buyers, function($a, $b) {
-    return  $b['purchases'] - $a['purchases'];
+    return  $a['amount_usd'] - $b['amount_usd'];
 });
 
-print "\n\n## " . count($sellers) . " Sellers\n";
+print "\n\n## Top 50 of " . count($sellers) . " Sellers\n";
 
-print "| Seller | Number of Sales | Total Sales in USD | Average Sales Price | Highest Sale Price | \n";
-print "|:----------------:|:----------------:|:----------------:|:----------------:|:------------------------:|\n";
-foreach ($sellers as $seller => $seller_details) {
-	print "|" . $seller . "|";
+print "| Rank | Seller | Number of Sales | Total Sales in USD | Average Sales Price | Highest Sale Price | \n";
+print "|:------:|:----------------:|:----------------:|:----------------:|:----------------:|:------------------------:|\n";
+
+for($i = 1; $i <= 50; $i++) {
+	$keys = array_keys($sellers);
+	$last_account = array_pop($keys);
+	$seller_details = $sellers[$last_account];
+	print "|" . $i . "|";
+	print "|" . $last_account . "|";
 	print $seller_details['sales'] . "|";
 	print '$' . number_format($seller_details['amount_usd'],2) . "|";
 	print '$' . number_format($seller_details['average_sale_price'],2) . "|";
 	print '$' . number_format($seller_details['highest_sale_price'],2) . "|";
 	print "\n";
+	array_pop($sellers);
 }
 
-print "\n\n## " . count($buyers) . " Buyers\n";
+print "\n\n## Top 50 of " . count($buyers) . " Buyers\n";
 
-print "| Buyer | Number of Purchases | Total Purchases in USD | Average Purchase Price | Highest Purchase Price | \n";
-print "|:----------------:|:----------------:|:----------------:|:----------------:|:------------------------:|\n";
-foreach ($buyers as $buyer => $buyer_details) {
-	print "|" . $buyer . "|";
+print "| Rank | Buyer | Number of Purchases | Total Purchases in USD | Average Purchase Price | Highest Purchase Price | \n";
+print "|:------:|:----------------:|:----------------:|:----------------:|:----------------:|:------------------------:|\n";
+
+for($i = 1; $i <= 50; $i++) {
+	$keys = array_keys($buyers);
+	$last_account = array_pop($keys);
+	$buyer_details = $buyers[$last_account];
+	print "|" . $i . "|";
+	print "|" . $last_account . "|";
 	print $buyer_details['purchases'] . "|";
 	print '$' . number_format($buyer_details['amount_usd'],2) . "|";
 	print '$' . number_format($buyer_details['average_sale_price'],2) . "|";
 	print '$' . number_format($buyer_details['highest_sale_price'],2) . "|";
 	print "\n";
+	array_pop($buyers);
 }
 
+print "\n\nEnd time: " . date('c') . "\n\n";
 
+$sales_for_writing_to_file = serialize($sales);
+$filename = 'cache/sales_' . md5($sales_for_writing_to_file) . '_data.txt';
+file_put_contents($filename,$sales_for_writing_to_file);
 
 //var_dump($sellers);
 
